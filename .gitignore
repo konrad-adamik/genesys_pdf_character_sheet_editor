@@ -1,0 +1,52 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Python virtual environments
+venv/
+env/
+ENV/
+.venv/
+virtualenv/
+
+# Python development
+*.egg-info/
+dist/
+build/
+*.egg
+.Python
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Python type checking and linting
+.mypy_cache/
+.ruff_cache/
+.pylint.d/
+
+# Environment files
+.env
+.env.local
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Output folder - keep directory but ignore all files
+output/*
+!output/.gitkeep

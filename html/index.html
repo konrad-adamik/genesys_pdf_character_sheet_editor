@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Generator Kart Postaci Genesys</title>
+    <link rel="stylesheet" href="/html/styles.css">
+</head>
+<body>
+<div id="backend-status" class="toast" aria-live="polite" aria-atomic="true">
+    <span class="toast-message">Sprawdzanie lokalnego backendu Pythona...</span>
+</div>
+<main class="app-shell">
+    <section class="control-panel">
+        <div class="panel-header">
+            <h1>Generator Kart Postaci</h1>
+        </div>
+
+        <div class="toolbar">
+            <button type="button" id="new-custom" class="ghost">Nowa W&#322;asna Posta&#263;</button>
+        </div>
+
+        <form id="sheet-form" class="editor-grid">
+            <section class="editor-section">
+                <h2>To&#380;samo&#347;&#263;</h2>
+                <div class="field-grid identity-grid">
+                    <label>
+                        Imi&#281; postaci
+                        <input type="text" name="name">
+                    </label>
+                    <label>
+                        Gatunek / Archetyp
+                        <input type="text" name="archetype">
+                    </label>
+                    <label>
+                        Profesja
+                        <input type="text" name="career">
+                    </label>
+                    <label>
+                        Gracz
+                        <input type="text" name="player">
+                    </label>
+                </div>
+            </section>
+
+            <section class="editor-section">
+                <h2>Cechy</h2>
+                <div class="field-grid three-up">
+                    <label>
+                        Krzepa
+                        <input type="number" min="1" max="6" name="brawn">
+                    </label>
+                    <label>
+                        Zwinno&#347;&#263;
+                        <input type="number" min="1" max="6" name="agility">
+                    </label>
+                    <label>
+                        Intelekt
+                        <input type="number" min="1" max="6" name="intellect">
+                    </label>
+                    <label>
+                        Spryt
+                        <input type="number" min="1" max="6" name="cunning">
+                    </label>
+                    <label>
+                        Wola
+                        <input type="number" min="1" max="6" name="willpower">
+                    </label>
+                    <label>
+                        Prezencja
+                        <input type="number" min="1" max="6" name="presence">
+                    </label>
+                </div>
+            </section>
+
+            <section class="editor-section">
+                <h2>Statystyki Pochodne</h2>
+                <div class="derived-grid">
+                    <fieldset class="derived-card">
+                        <legend>Redukcja</legend>
+                        <label>
+                            Warto&#347;&#263;
+                            <input type="number" min="0" name="soak">
+                        </label>
+                    </fieldset>
+                    <fieldset class="derived-card">
+                        <legend>Rany</legend>
+                        <label>
+                            Pr&oacute;g
+                            <input type="number" min="0" name="woundThreshold">
+                        </label>
+                        <label>
+                            Aktualne
+                            <input type="number" min="0" name="current_wounds">
+                        </label>
+                    </fieldset>
+                    <fieldset class="derived-card">
+                        <legend>Zm&#281;czenie</legend>
+                        <label>
+                            Pr&oacute;g
+                            <input type="number" min="0" name="strainThreshold">
+                        </label>
+                        <label>
+                            Aktualne
+                            <input type="number" min="0" name="current_strain">
+                        </label>
+                    </fieldset>
+                    <fieldset class="derived-card">
+                        <legend>Obrona</legend>
+                        <label>
+                            Dystans
+                            <input type="number" min="0" max="4" name="rangedDefense">
+                        </label>
+                        <label>
+                            Zwarcie
+                            <input type="number" min="0" max="4" name="meleeDefense">
+                        </label>
+                    </fieldset>
+                </div>
+            </section>
+
+            <section class="editor-section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Umiej&#281;tno&#347;ci</h2>
+                        <p class="section-copy">
+                            Ka&#380;da umiej&#281;tno&#347;&#263; ma poziom 0-5. PDF sam wyliczy zielone pola z cechy
+                            i zamieni je na &#380;&oacute;&#322;te zgodnie z wybranym poziomem.
+                        </p>
+                    </div>
+                </div>
+                <div id="skills-editor" class="skills-layout"></div>
+            </section>
+
+            <section class="editor-section">
+                <h2>Szczeg&oacute;&#322;y Karty</h2>
+                <div class="field-grid details-grid">
+                    <label class="full-span details-block">
+                        Bronie
+                        <div id="weapons-editor" class="weapons-editor"></div>
+                    </label>
+                    <div class="details-page-layout full-span">
+                        <div class="details-main-column">
+                            <section class="details-block">
+                                <h3>Motywacje</h3>
+                                <div class="details-motivation-grid">
+                                    <label>
+                                        Zaleta
+                                        <textarea name="advantage" rows="4" placeholder="Przewaga, mocna strona, wyr&oacute;&#380;nik"></textarea>
+                                    </label>
+                                    <label>
+                                        Wada
+                                        <textarea name="flaw" rows="4" placeholder="S&#322;abo&#347;&#263;, komplikacja, haczyk"></textarea>
+                                    </label>
+                                    <label>
+                                        Pragnienie
+                                        <textarea name="desire" rows="4" placeholder="Motywacja, cel, obsesja"></textarea>
+                                    </label>
+                                    <label>
+                                        L&#281;k
+                                        <textarea name="fear" rows="4" placeholder="Najwi&#281;kszy l&#281;k albo s&#322;abo&#347;&#263;"></textarea>
+                                    </label>
+                                </div>
+                            </section>
+                            <section class="details-block">
+                                <h3>Wyposa&#380;enie</h3>
+                                <div class="details-equipment-grid">
+                                    <label>
+                                        Bro&#324; i pancerz
+                                        <textarea name="armor_weapons" rows="5" placeholder="Opis pancerza, tarczy, dodatkowej broni, os&#322;on"></textarea>
+                                    </label>
+                                    <label>
+                                        Sprz&#281;t osobisty
+                                        <textarea name="equipment" rows="5" placeholder="Narz&#281;dzia, stroje, zapasy, przedmioty osobiste"></textarea>
+                                    </label>
+                                </div>
+                            </section>
+                            <section class="details-block">
+                                <h3>Notatki</h3>
+                                <label>
+                                    <span class="sr-only">Notatki</span>
+                                    <textarea name="notes" rows="5" placeholder="Motywacje, wygl&#261;d, haczyki fabularne"></textarea>
+                                </label>
+                            </section>
+                        </div>
+                        <aside class="description-card details-side-column">
+                            <h3>Opis postaci</h3>
+                            <div class="field-grid description-grid">
+                                <label>
+                                    P&#322;e&#263;
+                                    <input type="text" name="sex">
+                                </label>
+                                <label>
+                                    Wiek
+                                    <input type="text" name="age">
+                                </label>
+                                <label>
+                                    Wzrost
+                                    <input type="text" name="height">
+                                </label>
+                                <label>
+                                    Budowa cia&#322;a
+                                    <input type="text" name="body_build">
+                                </label>
+                                <label>
+                                    W&#322;osy
+                                    <input type="text" name="hair">
+                                </label>
+                                <label>
+                                    Oczy
+                                    <input type="text" name="eyes">
+                                </label>
+                                <label class="full-span">
+                                    Znaki szczeg&oacute;lne
+                                    <textarea name="distinctive_marks" rows="4" placeholder="Blizny, tatua&#380;e, cechy rozpoznawcze"></textarea>
+                                </label>
+                            </div>
+                        </aside>
+                    </div>
+                    <label class="full-span details-block">
+                        Talenty i zdolno&#347;ci specjalne
+                        <div id="talents-editor" class="talents-editor"></div>
+                    </label>
+                </div>
+            </section>
+        </form>
+
+        <div class="tool-row">
+            <button type="button" id="generate-pdf">Generuj PDF</button>
+            <button type="button" id="save-json">Zapisz JSON</button>
+            <button type="button" id="export-json">Eksportuj JSON</button>
+            <button type="button" id="copy-json">Kopiuj JSON</button>
+            <button type="button" id="reset-sheet" class="ghost">Resetuj</button>
+        </div>
+
+        <label class="json-box">
+            Dane JSON
+            <textarea id="json-output" rows="10" readonly></textarea>
+        </label>
+    </section>
+</main>
+
+<script src="/html/script.js"></script>
+</body>
+</html>
