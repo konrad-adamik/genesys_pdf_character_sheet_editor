@@ -8,40 +8,54 @@
 </head>
 <body>
 <div id="backend-status" class="toast" aria-live="polite" aria-atomic="true">
-    <span class="toast-message">Sprawdzanie lokalnego backendu Pythona...</span>
+    <div class="toast-body">
+        <span class="toast-message">Sprawdzanie lokalnego backendu Pythona...</span>
+        <button type="button" id="toast-close" class="toast-close" aria-label="Zamknij komunikat">×</button>
+    </div>
+    <div class="toast-timer" aria-hidden="true"></div>
 </div>
 <main class="app-shell">
+    <aside class="toolbar floating-toolbar">
+        <section class="toolbar-group">
+            <p class="toolbar-label">Opcje</p>
+            <button type="button" id="generate-pdf">Generuj PDF</button>
+            <button type="button" id="export-json">Eksportuj JSON</button>
+            <button type="button" id="import-json" class="ghost">Importuj JSON</button>
+            <input type="file" id="import-json-file" accept=".json,application/json" hidden>
+        </section>
+        <section class="toolbar-group">
+            <p class="toolbar-label">Posta&#263;</p>
+            <button type="button" id="new-custom" class="ghost">Nowa W&#322;asna Posta&#263;</button>
+        </section>
+    </aside>
+
     <section class="control-panel">
         <div class="panel-header">
             <h1>Generator Kart Postaci</h1>
         </div>
 
-        <div class="toolbar">
-            <button type="button" id="new-custom" class="ghost">Nowa W&#322;asna Posta&#263;</button>
-        </div>
-
         <form id="sheet-form" class="editor-grid">
-            <section class="editor-section">
-                <h2>To&#380;samo&#347;&#263;</h2>
-                <div class="field-grid identity-grid">
-                    <label>
-                        Imi&#281; postaci
-                        <input type="text" name="name">
-                    </label>
-                    <label>
-                        Gatunek / Archetyp
-                        <input type="text" name="archetype">
-                    </label>
-                    <label>
-                        Profesja
-                        <input type="text" name="career">
-                    </label>
-                    <label>
-                        Gracz
-                        <input type="text" name="player">
-                    </label>
-                </div>
-            </section>
+                <section class="editor-section">
+                    <h2>To&#380;samo&#347;&#263;</h2>
+                    <div class="field-grid identity-grid">
+                        <label>
+                            Imi&#281; postaci
+                            <input type="text" name="name">
+                        </label>
+                        <label>
+                            Gatunek / Archetyp
+                            <input type="text" name="archetype">
+                        </label>
+                        <label>
+                            Profesja
+                            <input type="text" name="career">
+                        </label>
+                        <label>
+                            Gracz
+                            <input type="text" name="player">
+                        </label>
+                    </div>
+                </section>
 
             <section class="editor-section">
                 <h2>Cechy</h2>
@@ -225,18 +239,6 @@
             </section>
         </form>
 
-        <div class="tool-row">
-            <button type="button" id="generate-pdf">Generuj PDF</button>
-            <button type="button" id="save-json">Zapisz JSON</button>
-            <button type="button" id="export-json">Eksportuj JSON</button>
-            <button type="button" id="copy-json">Kopiuj JSON</button>
-            <button type="button" id="reset-sheet" class="ghost">Resetuj</button>
-        </div>
-
-        <label class="json-box">
-            Dane JSON
-            <textarea id="json-output" rows="10" readonly></textarea>
-        </label>
     </section>
 </main>
 

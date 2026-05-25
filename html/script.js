@@ -355,16 +355,21 @@ const customBlankState = {
     notes: ""
 };
 const defaultState = structuredClone(customBlankState);
+const TOAST_AUTOHIDE_MS = 4800;
 
 const form = document.getElementById("sheet-form");
-const jsonOutput = document.getElementById("json-output");
 const backendStatus = document.getElementById("backend-status");
 const backendStatusMessage = backendStatus.querySelector(".toast-message");
+const toastCloseButton = document.getElementById("toast-close");
 const generatePdfButton = document.getElementById("generate-pdf");
+const importJsonButton = document.getElementById("import-json");
+const importJsonFileInput = document.getElementById("import-json-file");
 const skillsEditor = document.getElementById("skills-editor");
 const weaponsEditor = document.getElementById("weapons-editor");
 const talentsEditor = document.getElementById("talents-editor");
 let toastTimerId = null;
+
+toastCloseButton.textContent = "×";
 
 function skillFieldName(slug) {
     return `skill_rank__${slug}`;
@@ -611,7 +616,6 @@ function applyData(data) {
     applyWeaponRows(data.weaponRows || data.weapon_rows || []);
     applyTalentRows(data.talentRows || data.talent_rows || []);
     updateDerivedFields();
-    render();
 }
 
 function updateDerivedFields() {
@@ -725,25 +729,36 @@ function getFormData() {
     return data;
 }
 
-function render() {
-    jsonOutput.value = JSON.stringify(getFormData(), null, 2);
+function clearStatusTimer() {
+    if (toastTimerId) {
+        window.clearTimeout(toastTimerId);
+        toastTimerId = null;
+    }
+}
+
+function hideStatus() {
+    clearStatusTimer();
+    backendStatus.className = "toast";
 }
 
 function setStatus(message, type = "") {
     backendStatusMessage.textContent = message;
     backendStatus.className = "toast is-visible";
+
+    clearStatusTimer();
+
     if (type) {
         backendStatus.classList.add(type);
     }
 
-    if (toastTimerId) {
-        window.clearTimeout(toastTimerId);
-    }
-
     if (type !== "error") {
+        backendStatus.classList.add("is-timed");
+        void backendStatus.offsetWidth;
+        backendStatus.querySelector(".toast-timer").style.animationDuration = `${TOAST_AUTOHIDE_MS}ms`;
+        backendStatus.classList.add("is-counting");
         toastTimerId = window.setTimeout(() => {
-            backendStatus.classList.remove("is-visible");
-        }, 3400);
+            hideStatus();
+        }, TOAST_AUTOHIDE_MS);
     }
 }
 
@@ -797,7 +812,6 @@ function resetDerivedAutoMode() {
 function handleFormMutation(event) {
     markManual(event);
     updateDerivedFields();
-    render();
 }
 
 function downloadBlob(blob, filename) {
@@ -809,8 +823,29 @@ function downloadBlob(blob, filename) {
     URL.revokeObjectURL(url);
 }
 
+async function importCharacterJson(file) {
+    if (!file) {
+        return;
+    }
+
+    try {
+        const raw = await file.text();
+        const parsed = JSON.parse(raw);
+        const character = parsed.character && typeof parsed.character === "object" ? parsed.character : parsed;
+        resetDerivedAutoMode();
+        applyData(character);
+        setStatus(`Zaimportowano JSON z pliku ${file.name}.`, "success");
+    } catch (error) {
+        console.error("JSON import failed", error);
+        setStatus(`Nie udalo sie zaimportowac JSON: ${error.message}`, "error");
+    } finally {
+        importJsonFileInput.value = "";
+    }
+}
+
 form.addEventListener("input", handleFormMutation);
 form.addEventListener("change", handleFormMutation);
+toastCloseButton.addEventListener("click", hideStatus);
 
 document.getElementById("new-custom").addEventListener("click", () => {
     resetDerivedAutoMode();
@@ -818,37 +853,17 @@ document.getElementById("new-custom").addEventListener("click", () => {
 });
 
 document.getElementById("export-json").addEventListener("click", () => {
-    const blob = new Blob([jsonOutput.value], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(getFormData(), null, 2)], { type: "application/json" });
     const filename = `${(form.elements.name.value || "karta-postaci").replace(/\s+/g, "-").toLowerCase()}.json`;
     downloadBlob(blob, filename);
 });
 
-document.getElementById("copy-json").addEventListener("click", async () => {
-    try {
-        await navigator.clipboard.writeText(jsonOutput.value);
-        setStatus("Skopiowano JSON do schowka.", "success");
-    } catch (error) {
-        console.error("Clipboard copy failed", error);
-        setStatus("Nie udalo sie skopiowac do schowka. Nadal mozesz skopiowac dane recznie z pola JSON.", "error");
-    }
+importJsonButton.addEventListener("click", () => {
+    importJsonFileInput.click();
 });
 
-document.getElementById("save-json").addEventListener("click", async () => {
-    try {
-        const response = await fetch("/api/save-json", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ character: getFormData() })
-        });
-        const payload = await response.json();
-        if (!response.ok) {
-            throw new Error(payload.error || "JSON save failed.");
-        }
-        setStatus(`Zapisano JSON do characters/${payload.filename}.`, "success");
-    } catch (error) {
-        console.error(error);
-        setStatus(`Nie udalo sie zapisac JSON: ${error.message}`, "error");
-    }
+importJsonFileInput.addEventListener("change", (event) => {
+    importCharacterJson(event.target.files?.[0]);
 });
 
 document.getElementById("generate-pdf").addEventListener("click", async () => {
@@ -879,11 +894,6 @@ document.getElementById("generate-pdf").addEventListener("click", async () => {
         console.error(error);
         setStatus(`Nie udalo sie wygenerowac PDF: ${error.message}`, "error");
     }
-});
-
-document.getElementById("reset-sheet").addEventListener("click", () => {
-    resetDerivedAutoMode();
-    applyData(defaultState);
 });
 
 async function checkBackend() {
