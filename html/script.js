@@ -356,6 +356,11 @@ const customBlankState = {
 };
 const defaultState = structuredClone(customBlankState);
 const TOAST_AUTOHIDE_MS = 4800;
+const TEMPLATE_STORAGE_KEYS = {
+    character: "genesysCharacterTemplates",
+    weapon: "genesysWeaponTemplates",
+    talent: "genesysTalentTemplates"
+};
 
 const form = document.getElementById("sheet-form");
 const backendStatus = document.getElementById("backend-status");
@@ -364,12 +369,22 @@ const toastCloseButton = document.getElementById("toast-close");
 const generatePdfButton = document.getElementById("generate-pdf");
 const importJsonButton = document.getElementById("import-json");
 const importJsonFileInput = document.getElementById("import-json-file");
+const saveCharacterTemplateButton = document.getElementById("save-character-template");
+const loadCharacterTemplateButton = document.getElementById("load-character-template");
 const skillsEditor = document.getElementById("skills-editor");
 const weaponsEditor = document.getElementById("weapons-editor");
 const talentsEditor = document.getElementById("talents-editor");
+const templateModal = document.getElementById("template-modal");
+const templateModalTitle = document.getElementById("template-modal-title");
+const templateModalSubtitle = document.getElementById("template-modal-subtitle");
+const templateModalContent = document.getElementById("template-modal-content");
+const templateModalClose = document.getElementById("template-modal-close");
 let toastTimerId = null;
+let modalEscapeHandlerBound = false;
 
 toastCloseButton.textContent = "×";
+
+toastCloseButton.innerHTML = "&times;";
 
 function skillFieldName(slug) {
     return `skill_rank__${slug}`;
@@ -474,6 +489,7 @@ function renderWeaponsEditor() {
         <div class="weapons-table">
             <div class="weapons-header">
                 ${WEAPON_COLUMNS.map((column) => `<span>${column.label}</span>`).join("")}
+                <span>Akcje</span>
             </div>
             <div class="weapons-body">
                 ${Array.from({ length: 4 }, (_, rowIndex) => `
@@ -485,6 +501,10 @@ function renderWeaponsEditor() {
                                 placeholder="${rowIndex === 0 ? firstRowPlaceholders[column.key] : ""}"
                             >
                         `).join("")}
+                        <div class="table-actions-cell">
+                            <button type="button" data-weapon-save="${rowIndex}">Zapisz</button>
+                            <button type="button" class="ghost" data-weapon-load="${rowIndex}">Wczytaj</button>
+                        </div>
                     </div>
                 `).join("")}
             </div>
@@ -503,6 +523,7 @@ function renderTalentsEditor() {
         <div class="talents-table">
             <div class="talents-header">
                 ${TALENT_COLUMNS.map((column) => `<span>${column.label}</span>`).join("")}
+                <span>Akcje</span>
             </div>
             <div class="talents-body">
                 ${Array.from({ length: 12 }, (_, rowIndex) => `
@@ -514,11 +535,35 @@ function renderTalentsEditor() {
                                 placeholder="${rowIndex === 0 ? firstRowPlaceholders[column.key] : ""}"
                             >
                         `).join("")}
+                        <div class="table-actions-cell">
+                            <button type="button" data-talent-save="${rowIndex}">Zapisz</button>
+                            <button type="button" class="ghost" data-talent-load="${rowIndex}">Wczytaj</button>
+                        </div>
                     </div>
                 `).join("")}
             </div>
         </div>
     `;
+}
+
+function isTemplateRowEmpty(row) {
+    return !Object.values(row || {}).some((value) => String(value || "").trim() !== "");
+}
+
+function updateTemplateActionStates() {
+    Array.from({ length: 4 }, (_, rowIndex) => {
+        const saveButton = weaponsEditor.querySelector(`[data-weapon-save="${rowIndex}"]`);
+        if (saveButton) {
+            saveButton.disabled = isTemplateRowEmpty(getWeaponRow(rowIndex));
+        }
+    });
+
+    Array.from({ length: 12 }, (_, rowIndex) => {
+        const saveButton = talentsEditor.querySelector(`[data-talent-save="${rowIndex}"]`);
+        if (saveButton) {
+            saveButton.disabled = isTemplateRowEmpty(getTalentRow(rowIndex));
+        }
+    });
 }
 
 function normalizeNumber(value, fallback = 0) {
@@ -616,6 +661,7 @@ function applyData(data) {
     applyWeaponRows(data.weaponRows || data.weapon_rows || []);
     applyTalentRows(data.talentRows || data.talent_rows || []);
     updateDerivedFields();
+    updateTemplateActionStates();
 }
 
 function updateDerivedFields() {
@@ -691,6 +737,10 @@ function getWeaponRows() {
     });
 }
 
+function getWeaponRow(rowIndex) {
+    return getWeaponRows()[rowIndex] || {};
+}
+
 function getTalentRows() {
     return Array.from({ length: 12 }, (_, rowIndex) => {
         const row = {};
@@ -699,6 +749,28 @@ function getTalentRows() {
             row[column.key] = field?.value.trim() || "";
         });
         return row;
+    });
+}
+
+function getTalentRow(rowIndex) {
+    return getTalentRows()[rowIndex] || {};
+}
+
+function applyWeaponRow(rowIndex, row = {}) {
+    WEAPON_COLUMNS.forEach((column) => {
+        const field = form.elements.namedItem(weaponFieldName(rowIndex, column.key));
+        if (field) {
+            field.value = row[column.key] || "";
+        }
+    });
+}
+
+function applyTalentRow(rowIndex, row = {}) {
+    TALENT_COLUMNS.forEach((column) => {
+        const field = form.elements.namedItem(talentFieldName(rowIndex, column.key));
+        if (field) {
+            field.value = row[column.key] || "";
+        }
     });
 }
 
@@ -727,6 +799,242 @@ function getFormData() {
     data.weaponRows = getWeaponRows();
     data.talentRows = getTalentRows();
     return data;
+}
+
+function readTemplates(storageKey) {
+    try {
+        const raw = window.localStorage.getItem(storageKey);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        console.error("Template read failed", error);
+        return [];
+    }
+}
+
+function writeTemplates(storageKey, templates) {
+    window.localStorage.setItem(storageKey, JSON.stringify(templates));
+}
+
+function saveTemplate(storageKey, template) {
+    const templates = readTemplates(storageKey);
+    templates.push({
+        id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        createdAt: new Date().toISOString(),
+        ...template
+    });
+    writeTemplates(storageKey, templates);
+}
+
+function deleteTemplate(storageKey, templateId) {
+    const templates = readTemplates(storageKey).filter((template) => template.id !== templateId);
+    writeTemplates(storageKey, templates);
+}
+
+function handleModalEscape(event) {
+    if (event.key === "Escape") {
+        closeTemplateModal();
+    }
+}
+
+function closeTemplateModal() {
+    templateModal.hidden = true;
+    templateModalContent.innerHTML = "";
+    if (modalEscapeHandlerBound) {
+        document.removeEventListener("keydown", handleModalEscape);
+        modalEscapeHandlerBound = false;
+    }
+}
+
+function openTemplateModal(title, subtitle, contentNode) {
+    templateModalTitle.textContent = title;
+    templateModalSubtitle.textContent = subtitle || "";
+    templateModalSubtitle.hidden = !subtitle;
+    templateModalContent.innerHTML = "";
+    templateModalContent.append(contentNode);
+    templateModal.hidden = false;
+    if (!modalEscapeHandlerBound) {
+        document.addEventListener("keydown", handleModalEscape);
+        modalEscapeHandlerBound = true;
+    }
+}
+
+function buildTemplateSaveModal({ title, subtitle, defaultName = "", defaultDescription = "", onSave }) {
+    const container = document.createElement("div");
+    const formElement = document.createElement("form");
+    formElement.className = "template-form";
+    formElement.innerHTML = `
+        <label>
+            Nazwa
+            <input type="text" name="templateName" required>
+        </label>
+        <label>
+            Opis
+            <textarea name="templateDescription" rows="4" placeholder="Krótki opis zapisu"></textarea>
+        </label>
+        <div class="template-form-actions">
+            <button type="submit">Zapisz</button>
+            <button type="button" class="ghost" data-close-modal="true">Anuluj</button>
+        </div>
+    `;
+    formElement.elements.templateName.value = defaultName;
+    formElement.elements.templateDescription.value = defaultDescription;
+    formElement.addEventListener("submit", (event) => {
+        event.preventDefault();
+        onSave({
+            name: formElement.elements.templateName.value.trim(),
+            description: formElement.elements.templateDescription.value.trim()
+        });
+    });
+    container.append(formElement);
+    openTemplateModal(title, subtitle, container);
+    formElement.elements.templateName.focus();
+}
+
+function buildTemplateListModal({ title, subtitle, templates, onLoad, onDelete }) {
+    const container = document.createElement("div");
+
+    if (!templates.length) {
+        const empty = document.createElement("p");
+        empty.className = "template-empty";
+        empty.textContent = "Brak zapisanych pozycji.";
+        container.append(empty);
+        openTemplateModal(title, subtitle, container);
+        return;
+    }
+
+    const list = document.createElement("div");
+    list.className = "template-list";
+    templates.forEach((template) => {
+        const item = document.createElement("article");
+        item.className = "template-item";
+        item.innerHTML = `
+            <div class="template-item-header">
+                <h3>${template.name || "Bez nazwy"}</h3>
+            </div>
+            <p class="template-item-description">${template.description || "Brak opisu."}</p>
+            <div class="template-list-actions">
+                <button type="button" data-template-load="${template.id}">Wczytaj</button>
+                <button type="button" class="ghost" data-template-delete="${template.id}">Usuń</button>
+            </div>
+        `;
+        list.append(item);
+    });
+
+    list.addEventListener("click", (event) => {
+        const loadButton = event.target.closest("[data-template-load]");
+        if (loadButton) {
+            const template = templates.find((item) => item.id === loadButton.dataset.templateLoad);
+            if (template) {
+                onLoad(template);
+            }
+            return;
+        }
+
+        const deleteButton = event.target.closest("[data-template-delete]");
+        if (deleteButton) {
+            const template = templates.find((item) => item.id === deleteButton.dataset.templateDelete);
+            if (template) {
+                onDelete(template);
+            }
+        }
+    });
+
+    container.append(list);
+    openTemplateModal(title, subtitle, container);
+}
+
+function openSaveCharacterTemplateModal() {
+    const currentData = getFormData();
+    buildTemplateSaveModal({
+        title: "Zapisz szablon postaci",
+        subtitle: "Zapisze całą aktualną postać do local storage.",
+        defaultName: "",
+        defaultDescription: "",
+        onSave: ({ name, description }) => {
+            if (!name) {
+                setStatus("Podaj nazwę szablonu postaci.", "error");
+                return;
+            }
+
+            saveTemplate(TEMPLATE_STORAGE_KEYS.character, {
+                name,
+                description,
+                payload: currentData
+            });
+            closeTemplateModal();
+            setStatus(`Zapisano szablon postaci ${name}.`, "success");
+        }
+    });
+}
+
+function openLoadCharacterTemplateModal() {
+    buildTemplateListModal({
+        title: "Wczytaj szablon postaci",
+        subtitle: "Wybierz zapis, który chcesz wczytać do formularza.",
+        templates: readTemplates(TEMPLATE_STORAGE_KEYS.character),
+        onLoad: (template) => {
+            resetDerivedAutoMode();
+            applyData(template.payload || {});
+            closeTemplateModal();
+            setStatus(`Wczytano szablon postaci ${template.name}.`, "success");
+        },
+        onDelete: (template) => {
+            deleteTemplate(TEMPLATE_STORAGE_KEYS.character, template.id);
+            openLoadCharacterTemplateModal();
+        }
+    });
+}
+
+function openSaveRowTemplateModal(type, rowIndex) {
+    const isWeapon = type === "weapon";
+    const row = isWeapon ? getWeaponRow(rowIndex) : getTalentRow(rowIndex);
+    buildTemplateSaveModal({
+        title: isWeapon ? "Zapisz broń" : "Zapisz talent",
+        subtitle: isWeapon
+            ? `Zapiszesz dane z wiersza broni ${rowIndex + 1}.`
+            : `Zapiszesz dane z wiersza talentu ${rowIndex + 1}.`,
+        defaultName: "",
+        defaultDescription: "",
+        onSave: ({ name, description }) => {
+            if (!name) {
+                setStatus("Podaj nazwę zapisu.", "error");
+                return;
+            }
+
+            saveTemplate(TEMPLATE_STORAGE_KEYS[type], {
+                name,
+                description,
+                payload: row
+            });
+            closeTemplateModal();
+            setStatus(`Zapisano ${isWeapon ? "broń" : "talent"} ${name}.`, "success");
+        }
+    });
+}
+
+function openLoadRowTemplateModal(type, rowIndex) {
+    const isWeapon = type === "weapon";
+    buildTemplateListModal({
+        title: isWeapon ? "Wczytaj broń" : "Wczytaj talent",
+        subtitle: isWeapon
+            ? `Wybierz zapis dla wiersza broni ${rowIndex + 1}.`
+            : `Wybierz zapis dla wiersza talentu ${rowIndex + 1}.`,
+        templates: readTemplates(TEMPLATE_STORAGE_KEYS[type]),
+        onLoad: (template) => {
+            if (isWeapon) {
+                applyWeaponRow(rowIndex, template.payload || {});
+            } else {
+                applyTalentRow(rowIndex, template.payload || {});
+            }
+            closeTemplateModal();
+            setStatus(`Wczytano ${isWeapon ? "broń" : "talent"} ${template.name}.`, "success");
+        },
+        onDelete: (template) => {
+            deleteTemplate(TEMPLATE_STORAGE_KEYS[type], template.id);
+            openLoadRowTemplateModal(type, rowIndex);
+        }
+    });
 }
 
 function clearStatusTimer() {
@@ -812,6 +1120,7 @@ function resetDerivedAutoMode() {
 function handleFormMutation(event) {
     markManual(event);
     updateDerivedFields();
+    updateTemplateActionStates();
 }
 
 function downloadBlob(blob, filename) {
@@ -846,6 +1155,14 @@ async function importCharacterJson(file) {
 form.addEventListener("input", handleFormMutation);
 form.addEventListener("change", handleFormMutation);
 toastCloseButton.addEventListener("click", hideStatus);
+templateModalClose.addEventListener("click", closeTemplateModal);
+templateModal.addEventListener("click", (event) => {
+    if (event.target.matches("[data-close-modal='true']")) {
+        closeTemplateModal();
+    }
+});
+saveCharacterTemplateButton.addEventListener("click", openSaveCharacterTemplateModal);
+loadCharacterTemplateButton.addEventListener("click", openLoadCharacterTemplateModal);
 
 document.getElementById("new-custom").addEventListener("click", () => {
     resetDerivedAutoMode();
@@ -864,6 +1181,32 @@ importJsonButton.addEventListener("click", () => {
 
 importJsonFileInput.addEventListener("change", (event) => {
     importCharacterJson(event.target.files?.[0]);
+});
+
+weaponsEditor.addEventListener("click", (event) => {
+    const saveButton = event.target.closest("[data-weapon-save]");
+    if (saveButton) {
+        openSaveRowTemplateModal("weapon", Number(saveButton.dataset.weaponSave));
+        return;
+    }
+
+    const loadButton = event.target.closest("[data-weapon-load]");
+    if (loadButton) {
+        openLoadRowTemplateModal("weapon", Number(loadButton.dataset.weaponLoad));
+    }
+});
+
+talentsEditor.addEventListener("click", (event) => {
+    const saveButton = event.target.closest("[data-talent-save]");
+    if (saveButton) {
+        openSaveRowTemplateModal("talent", Number(saveButton.dataset.talentSave));
+        return;
+    }
+
+    const loadButton = event.target.closest("[data-talent-load]");
+    if (loadButton) {
+        openLoadRowTemplateModal("talent", Number(loadButton.dataset.talentLoad));
+    }
 });
 
 document.getElementById("generate-pdf").addEventListener("click", async () => {

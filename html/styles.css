@@ -101,6 +101,7 @@ textarea {
     margin: 0;
     font-family: "Bebas Neue", Arial, sans-serif;
     font-size: 1.35rem;
+    font-weight: 700;
     letter-spacing: 0.08em;
     color: #000;
 }
@@ -119,6 +120,10 @@ textarea {
     backdrop-filter: blur(12px);
 }
 
+.toolbar-group .ghost {
+    text-align: center;
+}
+
 button {
     border: 0;
     border-radius: 999px;
@@ -131,6 +136,7 @@ button {
 
 .toolbar button {
     width: 100%;
+    text-align: center;
 }
 
 button:hover {
@@ -146,6 +152,30 @@ button:disabled {
 button.ghost {
     background: #ece4d8;
     color: var(--ink);
+}
+
+.toolbar .action-large {
+    padding: 13px 16px;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+#generate-pdf,
+#new-custom {
+    background: linear-gradient(135deg, #1f4f92, #3e73bf);
+    color: #fff;
+}
+
+#export-json,
+#save-character-template {
+    background: linear-gradient(135deg, #2f6a47, #47885f);
+    color: #fff;
+}
+
+#import-json,
+#load-character-template {
+    background: #eadfcd;
+    color: #4b3421;
 }
 
 .editor-grid {
@@ -550,12 +580,12 @@ select {
 
 .weapons-header,
 .weapons-row {
-    grid-template-columns: 1.4fr 1.1fr 0.8fr 0.9fr 0.9fr 1.4fr;
+    grid-template-columns: 1.3fr 1fr 0.78fr 0.88fr 0.84fr 1.3fr 1.12fr;
 }
 
 .talents-header,
 .talents-row {
-    grid-template-columns: 1.2fr 0.36fr 2.2fr;
+    grid-template-columns: 1.08fr 0.42fr 2.18fr 0.72fr;
 }
 
 .weapons-header,
@@ -570,6 +600,8 @@ select {
 
 .weapons-header span,
 .talents-header span {
+    display: flex;
+    align-items: center;
     padding: 9px 10px;
     border-right: 1px solid rgba(38, 77, 132, 0.12);
 }
@@ -577,6 +609,7 @@ select {
 .weapons-header span:last-child,
 .talents-header span:last-child {
     border-right: 0;
+    justify-content: center;
 }
 
 .weapons-row,
@@ -602,6 +635,157 @@ select {
 .weapons-row input:last-child,
 .talents-row input:last-child {
     border-right: 0;
+}
+
+.table-actions-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    min-width: 0;
+    border-left: 1px solid rgba(111, 98, 88, 0.12);
+}
+
+.table-actions-cell button {
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    line-height: 1.1;
+    font-weight: 700;
+}
+
+.table-actions-cell .ghost {
+    background: #e9dfcf;
+    color: #4b3421;
+}
+
+.table-actions-cell [data-weapon-save],
+.table-actions-cell [data-talent-save] {
+    background: linear-gradient(135deg, #2f6a47, #47885f);
+}
+
+.table-actions-cell [data-weapon-load],
+.table-actions-cell [data-talent-load] {
+    background: #eadfcd;
+    color: #4b3421;
+}
+
+.toolbar button:not(.ghost) {
+    background: linear-gradient(135deg, #1f4f92, #3e73bf);
+}
+
+.toolbar .ghost {
+    background: #ebe0d1;
+    color: #30251c;
+}
+
+.modal-shell[hidden] {
+    display: none;
+}
+
+.modal-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(28, 29, 32, 0.45);
+    backdrop-filter: blur(4px);
+}
+
+.modal-card {
+    position: relative;
+    z-index: 1;
+    width: min(680px, calc(100vw - 32px));
+    max-height: calc(100vh - 48px);
+    margin: 24px auto;
+    padding: 20px;
+    overflow: auto;
+    border: 1px solid rgba(85, 57, 35, 0.12);
+    border-radius: 24px;
+    background: var(--panel);
+    box-shadow: 0 24px 64px rgba(20, 18, 15, 0.24);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-family: "Bebas Neue", Arial, sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.06em;
+}
+
+.modal-copy {
+    margin: 6px 0 0;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.modal-close {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 999px;
+    background: #ece4d8;
+    color: var(--ink);
+    font-size: 1.4rem;
+}
+
+.modal-content,
+.template-form,
+.template-list {
+    display: grid;
+    gap: 14px;
+}
+
+.template-form-actions,
+.template-list-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.template-empty {
+    margin: 0;
+    padding: 16px;
+    border: 1px dashed rgba(111, 98, 88, 0.28);
+    border-radius: 16px;
+    color: var(--muted);
+    text-align: center;
+}
+
+.template-item {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.74);
+}
+
+.template-item-header h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.template-item-description {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.45;
+    white-space: pre-wrap;
 }
 
 @media (max-width: 720px) {
@@ -658,6 +842,13 @@ select {
     .talents-header,
     .talents-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .modal-card {
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        margin: 10px auto;
+        padding: 16px;
     }
 
     .section-heading,

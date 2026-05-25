@@ -18,14 +18,16 @@
     <aside class="toolbar floating-toolbar">
         <section class="toolbar-group">
             <p class="toolbar-label">Opcje</p>
-            <button type="button" id="generate-pdf">Generuj PDF</button>
-            <button type="button" id="export-json">Eksportuj JSON</button>
-            <button type="button" id="import-json" class="ghost">Importuj JSON</button>
+            <button type="button" id="generate-pdf" class="action-primary action-large">Generuj PDF</button>
+            <button type="button" id="export-json" class="action-save">Eksportuj JSON</button>
+            <button type="button" id="import-json" class="action-load">Importuj JSON</button>
             <input type="file" id="import-json-file" accept=".json,application/json" hidden>
         </section>
         <section class="toolbar-group">
             <p class="toolbar-label">Posta&#263;</p>
-            <button type="button" id="new-custom" class="ghost">Nowa W&#322;asna Posta&#263;</button>
+            <button type="button" id="new-custom" class="action-primary action-large">Nowa W&#322;asna Posta&#263;</button>
+            <button type="button" id="save-character-template" class="action-save">Zapisz szablon postaci</button>
+            <button type="button" id="load-character-template" class="action-load">Wczytaj szablon postaci</button>
         </section>
     </aside>
 
@@ -137,10 +139,6 @@
                 <div class="section-heading">
                     <div>
                         <h2>Umiej&#281;tno&#347;ci</h2>
-                        <p class="section-copy">
-                            Ka&#380;da umiej&#281;tno&#347;&#263; ma poziom 0-5. PDF sam wyliczy zielone pola z cechy
-                            i zamieni je na &#380;&oacute;&#322;te zgodnie z wybranym poziomem.
-                        </p>
                     </div>
                 </div>
                 <div id="skills-editor" class="skills-layout"></div>
@@ -241,6 +239,20 @@
 
     </section>
 </main>
+
+<div id="template-modal" class="modal-shell" hidden>
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="template-modal-title">
+        <div class="modal-header">
+            <div>
+                <h2 id="template-modal-title">Szablony</h2>
+                <p id="template-modal-subtitle" class="modal-copy"></p>
+            </div>
+            <button type="button" id="template-modal-close" class="modal-close" aria-label="Zamknij modal">&times;</button>
+        </div>
+        <div id="template-modal-content" class="modal-content"></div>
+    </section>
+</div>
 
 <script src="/html/script.js"></script>
 </body>
