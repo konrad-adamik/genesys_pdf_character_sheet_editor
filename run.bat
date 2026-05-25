@@ -47,6 +47,5 @@ exit /b 1
 :server_ready
 echo Server is ready.
 start "" "http://127.0.0.1:5000/"
-echo Press any key to close this launcher window.
-pause
 ENDLOCAL
+exit /b 0
